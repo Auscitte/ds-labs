@@ -1,0 +1,551 @@
+---
+title: "Experimental Results for the Expectation of Least Squares Estimator"
+author: "Ry Auscitte"
+output: html_notebook
+---
+
+<style>
+  h1 { color: #e93f00; }
+  h2 { color: #e93f00; }
+  h3 { color: #e93f00; }
+</style>
+
+This is a notebook-companion to my post. It considers simple linear regression coefficients as least squares estimators for the parameters $\beta_0^*$ and $\beta_1^*$ of the assumed affine underlying dependency between random variables $X$ and $Y$.
+
+## Theory Review
+
+### 2-Step Generative Model
+
+$$X_i \stackrel{iid}{\sim} Exp(\lambda)$$ 
+$$\mathcal{E}_i\stackrel{iid}{\sim} \mathcal{N}(0, \sigma^2) \quad \mbox{(so-called noise)}$$ 
+$$Y_i = \beta_0^* + \beta_1^* \cdot X_i + \mathcal{E}_i$$
+Given a $n$-sized sample of random variables $X$ and $Y$: $x_1,\dots,x_n$ and $y_1,\dots,y_n$, a least squares estimator for $\beta_0^*$ and $\beta_1^*$ can be computed as follows:
+
+$$\hat{\beta_1} = \frac{\sum_{i=1}^n y_i \cdot x_i - \overline{y} \cdot \sum_{i=1}^{n}{x_i}}{ \sum_{i=1}^n{x_i^2} - \overline{x} \cdot \sum_{i=1}^n {x_i} } = \frac{S_{xy}}{S_{xx}}$$
+$$\hat{\beta_0} = \overline{y} - \hat{\beta_1} \cdot \overline{x}$$
+Estimators are sample statistics. Replicating the sampling process indefinitely, we can treat the estimators as random variables dependent on $2\cdot n$ variables: $X_i$ and $Y_i$, each of $X_i$ and $Y_i$ distributed identically to $X$ and $Y$ respectively. 
+
+$$\overline{X} = \frac{1}{n} \cdot \sum_{i=1}^{n} X_i; \quad \overline{Y} = \frac{1}{n} \cdot \sum_{i=1}^{n} Y_i$$
+
+$$\widehat{\mathcal{B}_1} = \frac{\sum_{i=1}^n Y_i \cdot X_i - \overline{Y} \cdot \sum_{i=1}^{n}{X_i}}{ \sum_{i=1}^n{X_i^2} - \overline{X} \cdot \sum_{i=1}^n {X_i} } = \frac{S_{XY}}{S_{XX}}$$
+$$\widehat{\mathcal{B}_0} = \overline{Y} - \widehat{\mathcal{B}_1} \cdot \overline{X}$$
+Multiplying numerator and denominator by $\frac{1}{n - 1}$, one can express $\widehat{\mathcal{B}_1}$ in terms of sample variance for $X$ and empirical covariance between $X$ and $Y$.
+
+$$\widehat{\mathcal{B}_1} = \frac{\frac{1}{n-1} \cdot \left(\sum_{i=1}^n Y_i \cdot X_i - n \cdot \overline{Y} \cdot \overline{X}\right)}{\frac{1}{n - 1} \cdot \left(\sum_{i=1}^n{X_i^2} - n \cdot \overline{X} \cdot \overline{X}\right)} = \frac{\widehat{cov[X,Y]}}{\widehat{var[X]}}$$
+
+It can be shown that $E[\widehat{\mathcal{B}_0}] = \beta_0^*$ and $E[\widehat{\mathcal{B}_1}] = \beta_1^*$. Computed here are the theoretical means (expectations) of $\widehat{\mathcal{B}_0}$ and $\widehat{\mathcal{B}_1}$ ($\widehat{\mathcal{B}_i}$ being treated as random variables). In practical terms, we can only repeat the sampling process a finite number of times (say, $m$), taking $m\cdot n$ samples of $X$ and $Y$ in the process. Thereby we will have $m$ different estimated values  $\hat{\beta_1}^{(1)},\dots,\hat{\beta_1}^{(m)}$ and $\hat{\beta_0}^{(1)},\dots,\hat{\beta_0}^{(m)}$. 
+
+By the law of large numbers (not going into detail concerning difference between strong and weak LLN and associated types of convergence), $\overline{\hat{\beta_1}} \longrightarrow E[\widehat{\mathcal{B}_1}] = \beta_1^*$ as $m \rightarrow \infty$, where $\overline{\hat{\beta_1}}$ is computed as follows: 
+$$\overline{\hat{\beta_1}} = \frac{1}{m} \cdot \sum_{i=1}^{m} \hat{\beta_1}^{(i)}$$
+Identical (up to the 0/1 index) expression can be written for $\beta_0$. In other words, in practice expectations are replaced by averages. 
+
+
+### 1-Step Generative Model
+
+This model is simpler than the previous one in that it uses deterministic values instead of sampling $X$. We are given $n$ constants $x_i, \dots, x_n$ and they will remain the same throughout the entire sample collection process. The simplified generative model is as follows:
+
+$$\mathcal{E}_i\stackrel{iid}{\sim} \mathcal{N}(0, \sigma^2)$$
+
+$$Y_i = \beta_0^* + \beta_1^* \cdot x_i + \mathcal{E}_i$$
+The expressions for the random variables $\widehat{\mathcal{B}_1}$ and $\widehat{\mathcal{B}_0}$ change slightly:
+
+$$\widehat{\mathcal{B}_1} = \frac{\sum_{i=1}^n Y_i \cdot x_i - \overline{Y} \cdot \sum_{i=1}^{n}{x_i}}{ \sum_{i=1}^n{x_i^2} - \overline{x} \cdot \sum_{i=1}^n {x_i} } = \frac{S_{xY}}{S_{xx}}$$
+$$\widehat{\mathcal{B}_0} = \overline{Y} - \widehat{\mathcal{B}_1} \cdot \overline{x}$$
+
+As before, $E[\widehat{\mathcal{B}_0}] = \beta_0^*$ and $E[\widehat{\mathcal{B}_1}] = \beta_1^*$, but now that $S_{xx}$ is a constant (rather than a random variable) it becomes easy to compute variances of $\widehat{\mathcal{B}_i}$. It turns out, from the normality assumption about the noise, we can even deduce distributions of these random variables:
+
+$$\widehat{\mathcal{B}_0} \sim \mathcal{N}\left(\beta_0^*, \; \sigma^2 \cdot \left(\frac{1}{n} + \frac{\overline{x}^2}{S_{xx}} \right)\right)$$
+$$\widehat{\mathcal{B}_1} \sim \mathcal{N}\left(\beta_1^*, \;  \frac{\sigma^2}{S_{xx}} \right)$$
+The results given by the law of large numbers still hold: $\lim_{m\rightarrow \infty} \overline{\hat{\beta_1}} = E[\widehat{\mathcal{B}_1}] = \beta_1^*$ and $\lim_{m\rightarrow \infty} \overline{\hat{\beta_0}} = E[\widehat{\mathcal{B}_0}] = \beta_0^*$. However, it is also known that sample variance converges almost surely (and in probability, of course) to the population variance.
+
+$$\lim_{m\rightarrow \infty} var[\hat{\beta_1}] = var[\widehat{\mathcal{B}_1}] = \frac{\sigma^2}{S_{xx}}$$
+ 
+$$\lim_{m\rightarrow \infty} var[\hat{\beta_0}] = var[\widehat{\mathcal{B}_0}] = \sigma^2 \cdot \left(\frac{1}{n} + \frac{\overline{x}^2}{S_{xx}}\right)$$
+
+Further, applying central limit theorem, we obtain:
+
+$$\sqrt{m} \cdot \left(\frac{\overline{\widehat{\mathcal{B}_0}} - \beta_0^*}{\sigma \cdot \sqrt{\frac{1}{n} + \frac{\overline{x}^2}{S_{xx}}}} \right) \stackrel{d}{\longrightarrow} \mathcal{N}(0,1)$$
+$$\sqrt{m} \cdot \frac{\overline{\widehat{\mathcal{B}_1}} - \beta_1^*}{\frac{\sigma}{\sqrt{S_{xx}}}} \stackrel{d}{\longrightarrow} \mathcal{N}(0,1)$$
+Thus we can conclude that $\overline{\widehat{\mathcal{B}_i}}$ follow Gaussian distribution in limit; notice that this result did not involve restrictions on the distribution of $\mathcal{E}$ or $Y$. Under additional assumptions, stronger statements can be made. Below is progression from the strongest to the weakest statement:
+
+* $\widehat{\mathcal{B}_i}$ (and $\overline{\widehat{\mathcal{B}_i}}$ by extension) are normally distributed if the noise is.
+* $\widehat{\mathcal{B}_i}$ (and $\overline{\widehat{\mathcal{B}_i}}$ by extension) are approximately normally distributed if $n$ is large (irrespective of noise distribution), because sums and averages tend to be normally distributed
+* $\overline{\widehat{\mathcal{B}_i}}$ is normally distributed in the limit $m \rightarrow \infty$ irrespective of noise distribution or sample sizes.
+
+
+## The Experiment  
+
+### Generative Models Implementation
+
+The code chunk below defines functions that generate random samples and compute linear regression coefficients. Since multiple generative models are supported and parameters required to specify these models differ, we will use R's environments (passed as a parameter named "varargs") in order to implement the variable number of arguments. 
+
+```{r}
+library(rlang)
+
+Sxy <- function(x, y) {
+  sum(x * y) - mean(x) * sum(y)
+}
+
+gaussian_noise <- function(n, varargs) {
+  stopifnot(env_has(varargs, "noise_sd"))
+  rnorm(n, mean = 0, sd = varargs$noise_sd)
+}
+
+#explanation variable for the 2-Step generative model
+exponential_feature <- function(n, varargs) {
+  stopifnot(env_has(varargs, "FeatureParam"))
+  rexp(n, varargs$FeatureParam)
+}
+
+#explanation variable for the 1-Step generative model
+deterministic_feature <- function(n, varargs) {
+  stopifnot(env_has(varargs, "XSource"))
+  varargs$XSource[1:n]
+}
+
+#Replicates computing least squares estimates for coefficients of 
+#simple linear regression based on a n-sized sample m times
+sample_beta_estimator <- function(m, n, beta0, beta1, varargs) {
+  
+  beta_hats <- vector()
+
+  for (i in 1:m) {
+  
+    #data generation
+    X <- varargs$gen_feature(n, varargs)
+    eps <- varargs$gen_noise(n, varargs)
+    Y <- beta0 + beta1 * X + eps
+    
+    #computing the estimator
+    Y_bar <- mean(Y)
+    X_bar <- mean(X)
+    beta_hat <- c(Y_bar - (Sxy(X, Y) / Sxy(X, X)) * X_bar, Sxy(X, Y) / Sxy(X, X))
+    
+    beta_hats <- rbind(beta_hats, beta_hat)
+  }
+  
+  beta_hats
+}
+
+#Computes empirical mean and variance of estimated linear regression
+#coefficients averaged over m runs, each involving calculation of the 
+#least squares estimates for a sample of size n
+moments_of_beta_estimator <- function(m, n, beta0, beta1, varargs) {
+  
+  beta_hats <- sample_beta_estimator(m, n, beta0, beta1, varargs)
+
+  #average is in itself an estimator of the expectation of the least squares estimator 
+  beta_hat_bar <- c( mean(beta_hats[, 1]), mean(beta_hats[, 2]) )
+  beta_hat_var <- c( var(beta_hats[, 1]), var(beta_hats[, 2]) )
+  
+  c(beta_hat_bar, beta_hat_var)
+}
+```
+
+Next global parameters used in generating the data are defined.
+
+```{r}
+#sample size for the experiments where it remains unchanged
+n_fixed <- 1000
+#the maximum sample size that will ever be used 
+n_max <- 100000
+#minimum value for n (n should be greater than 1 for X to have non-zero variance)
+n_min <- 5
+
+#Distribution parameter for the explanatory variable  
+lambda <- 2
+#Standard deviation for the Gaussian noise
+sigma <- 3
+#True (latent) values for regression coefficients
+beta_star <- c(5.5, 2.2)
+#Deterministic X for the 1-Step model (not treated as a random variable)
+Xfull <- rexp(n_max, lambda) 
+
+#The maximum number of times beta estimates are sampled to demo the absence of bias;
+#this value cannot be as large as n_max to keep the running time within reasonable limits
+m_max_nobias <- 19999
+
+#Parameters for the 2-Step generative model
+env_2st <- env(gen_noise = gaussian_noise, noise_sd = sigma, gen_feature = exponential_feature, FeatureParam = lambda)
+#Parameters for the 1-Step generative model
+env_1st <- env(gen_noise = gaussian_noise, noise_sd = sigma, gen_feature = deterministic_feature, XSource = Xfull)
+```
+
+
+### Plotting: Setting Up the Parameters
+
+```{r}
+color_basic = "#333399"
+color_highlight = "#FF6633"
+line_width = 2
+dot_shape = 21
+```
+
+
+### Visualizing Consistency of the Estimators (Data Collection)
+
+Here the data necessary to demonstrate consistency of estimators for linear regression coefficients is collected. In order to reduce running time, the sequence of sample sizes will be non-linear with the greater density of points near small $n$s, where we expect greater variability in the estimator's values. 
+
+```{r}
+#Computes β0 and β1 estimates for gradually increasing sample sizes in order to show consistency of the estimator
+collect_data_for_consistency_demo <- function(varargs) {
+  
+  n_seq <- c(seq(100, 999, 100), seq(1000, m_max_nobias, 500), seq(m_max_nobias + 1, n_max, 1000))
+
+  beta_hats <- data.frame()
+  for (n in n_seq) {
+    #m == 1, the estimates are computed once only for each n
+    beta_hats <- rbind(beta_hats, c(n, sample_beta_estimator(1, n, beta_star[1], beta_star[2], varargs)))
+  }
+  
+  names(beta_hats) <- c("n", "beta0", "beta1")
+  
+  beta_hats
+}
+
+beta_hats_2step <- collect_data_for_consistency_demo(env_2st)
+beta_hats_1step <- collect_data_for_consistency_demo(env_1st)
+```
+
+
+### Visualizing Consistency of the Estimators (Plotting)
+
+```{r fig.align="center", echo = FALSE, fig.width = 8}
+#Plots expectations (theoretical means) of LS estimators for β0 and β1 (in orange)
+#along with observed (random!) estimated values against sample size
+demo_consistency <- function(bhs, steps, beta_idx) {
+  
+  sidx <- paste0("beta", beta_idx)
+  all_data <- c(bhs[[1]][, sidx], bhs[[2]][, sidx])
+  
+  plot(bhs[[steps]][,"n"], bhs[[steps]][, sidx], 
+       bg = color_basic, pch = dot_shape,
+       ylim = c(min(all_data), max(all_data)),
+       xlab = "n", ylab = paste0("Estimated beta", beta_idx), 
+       main = paste0(steps, "-Step Generative Moodel"))
+  
+  lines(bhs[[steps]][,"n"], rep(beta_star[beta_idx + 1], dim(bhs[[steps]])[[1]]), 
+        col = color_highlight, lwd = line_width)
+}
+
+bhs <- list(beta_hats_1step, beta_hats_2step)
+par(mfcol = c(2, 2))
+demo_consistency(bhs, 2, 0)
+demo_consistency(bhs, 2, 1)
+demo_consistency(bhs, 1, 0)
+demo_consistency(bhs, 1, 1)
+```
+
+
+## Visualizing Unbiasedness of the Estimators (Data Collection)
+
+This time the sample size is kept fixed at n_fixed and the sampling procedure is repeated $m$ times. For each sample, we compute the LS estimators as statistics of that sample and then average the estimated values over $m$ experiments thereby obtaining the estimators' empirical means and variances. As before, a non-linear sequence of $m$ is used, but in order to keep the running time within reasonable limits we have to limit the number of experiments. 
+
+```{r}
+#Computes sample mean and variance for a sequence of m-sized samples of estimated β0 and β1, 
+#each, in turn, computed based on a n_fixed-sized sample of X and Y. 
+collect_data_for_bias_demo <- function(varargs) {
+  
+  m_seq <- c(seq(100, 999, 100), seq(1000, m_max_nobias, 500))
+
+  beta_hat_means <- data.frame()
+  for (m in m_seq) {
+    beta_hat_means <- rbind(beta_hat_means, 
+        c(m, moments_of_beta_estimator(m, n_fixed, beta_star[1], beta_star[2], varargs)))
+  }
+  
+  names(beta_hat_means) <- c("m", "mean_beta0", "mean_beta1", "var_beta0", "var_beta1")
+  
+  beta_hat_means
+}
+
+beta_hat_means_2step <- collect_data_for_bias_demo(env_2st)
+beta_hat_means_1step <- collect_data_for_bias_demo(env_1st)
+```
+
+
+## Visualizing Unbiasedness of the Estimators (Plotting the Means)
+
+By the law of large numbers, average and sample variance of a random variable should go to its expectation and population variance respectively as the sample size goes to infinity. Moreover, expectations of the LS estimators have been shown to be the true values of the coefficients in the underlying affine relation, therefore, as $m$ increases, we should observe average estimated values for a coefficient concentrate around its true value.
+
+```{r fig.align="center", echo = TRUE, fig.width = 8}
+
+demo_absense_of_bias <- function(bhs, steps, beta_idx) {
+  
+  sidx <- paste0("mean_beta", beta_idx)
+  all_data <- c(bhs[[1]][, sidx], bhs[[2]][, sidx])
+  
+  plot(bhs[[steps]][,"m"], bhs[[steps]][, sidx], 
+       bg = color_basic, pch = dot_shape,
+       ylim = c(min(all_data), max(all_data)),
+       xlab = "m", ylab = paste0("Mean Estimated beta", beta_idx), 
+       main = paste0(steps, "-Step Generative Model"))
+  
+  lines(bhs[[steps]][,"m"], rep(beta_star[beta_idx + 1], dim(bhs[[steps]])[1]), 
+        col = color_highlight, lwd = line_width)
+}
+
+
+par(mfcol = c(2, 2))
+
+bhs <- list(beta_hat_means_1step, beta_hat_means_2step)
+demo_absense_of_bias(bhs, 2, 0)
+demo_absense_of_bias(bhs, 2, 1)
+demo_absense_of_bias(bhs, 1, 0)
+demo_absense_of_bias(bhs, 1, 1)
+```
+
+
+### Variance of the Estimates
+
+```{r}
+var_beta_0 <- function(noise_sd, x) {
+  noise_sd^2 * (1/length(x) + (mean(x)^2)/Sxy(x, x))
+}
+
+var_beta_1 <- function(noise_sd, x) {
+  noise_sd^2 / Sxy(x, x)
+}
+```
+
+
+### On Convergence Rates
+
+This section, rather than being essential to the analysis of the experimental results, is more of a curiosity and, as such, it can be safely skipped. 
+
+Having compared the convergence plots illustrating consistency and unbiasedness properties of the LS estimators, one may falsely conclude that in the case of consistency, the observed values converge to the true ones faster. However, it is only an illusion created by the difference in the restriction we have put on the maximum values of n and m and the resulting difference in scale.
+
+In order to estimate the actual convergence rates, we combine data points for the same values of n and m on a single figure. In particular, an absolute difference between the estimated and true value of the coefficient $\beta_1$ in the 1-Step model will be plotted. It may also be helpful to consider the difference in variances of the estimated values $\hat{\beta_1}$ and the same, averaged over m samples, while keeping in mind that smaller variances translate into faster convergence rates.  
+
+
+```{r fig.width = 6, fig.height = 7}
+par(mfcol = c(2, 1))
+
+lim_n = dim(beta_hat_means_1step)[1]
+
+all_data <- c(abs(beta_hat_means_1step$mean_beta1[1:lim_n] - rep(beta_star[2], lim_n)), 
+              abs(beta_hats_1step$beta1[1:lim_n] - rep(beta_star[2], lim_n)))
+
+plot(beta_hat_means_1step$m[1:lim_n], 
+     abs(beta_hat_means_1step$mean_beta1[1:lim_n] - rep(beta_star[2], lim_n)), 
+     ylim = c(min(all_data), max(all_data)), bg = color_basic, pch = dot_shape, 
+     xlab = "sample size", 
+     ylab = "|estimated beta1 - beta1*|", main = "Convergence Rates for the 1-Step Generative Model")
+
+points(beta_hats_1step$n[1:lim_n], 
+      abs(beta_hats_1step$beta1[1:lim_n] - rep(beta_star[2], lim_n)),
+      bg = color_highlight,  pch = dot_shape)
+
+legend(x = "topright", legend = c("mean beta1 estimate (from bias check)", 
+                                  "beta1 etimate (from consistency check)"), 
+       pch = 20, col = c(color_basic, color_highlight))
+
+vars_cons <- vector()
+vars_bias <- vector()
+first_n <- n_min #skip the first few extra large variances to obtain a better-scaled plot
+for (num in first_n:lim_n) {
+  vars_cons <- c(vars_cons, var_beta_1(sigma, Xfull[1:beta_hats_1step$n[num]]))
+  vars_bias <- c(vars_bias, var_beta_1(sigma, Xfull[1:n_fixed]) / beta_hat_means_1step$m[num])
+}
+
+plot(beta_hats_1step$n[first_n:lim_n], vars_cons, type = "l", 
+     col = color_highlight, lwd = line_width, 
+     xlab = "sample size", ylab = "Variance")
+lines(beta_hats_1step$n[first_n:lim_n], vars_bias, col = color_basic, lwd = line_width)
+
+legend(x = "topright", legend = c("variance of mean beta1 estimates (from bias check)", 
+                                  "variance of beta1 etimates (from consistency check)"), 
+       pch = 20, col = c(color_basic, color_highlight))
+```
+
+
+### Visualizing the LLN Results for Variances
+
+Similar to the means, sample variances of the estimators go to the respective population variances as the number of runs (m) increases. Apart from the fact that we derived expressions for population variances in the setting of the 1-Step Model only, the plots are constructed similar to the ones for means.
+
+```{r fig.align="center", echo = TRUE, fig.width = 8}
+
+par(mfcol = c(2, 2))
+
+#Empirical beta variance for the 2-Step Model (population variance is outside the scope of this work) 
+plot(beta_hat_means_2step$m, beta_hat_means_2step$var_beta0, bg = color_basic, pch = dot_shape, 
+     xlab = "m", ylab = "Variance of Estimated beta0", main = "2-Step Generative Model")
+plot(beta_hat_means_2step$m, beta_hat_means_2step$var_beta1, bg = color_basic, pch = dot_shape, 
+     xlab = "m", ylab = "Variance of Estimated beta1", main = "2-Step Generative Model")
+
+#Sample and population beta variances for the 1-Step Model
+plot(beta_hat_means_1step$m, beta_hat_means_1step$var_beta0, bg = color_basic, pch = dot_shape, 
+     xlab = "m", ylab = "Variance of Estimated beta0", main = "1-Step Generative Model")
+lines(beta_hat_means_1step$m, rep(var_beta_0(sigma, Xfull[1:n_fixed]), dim(beta_hat_means_1step)[1]), 
+      col = color_highlight, lwd = line_width)
+
+plot(beta_hat_means_1step$m, beta_hat_means_1step$var_beta1, bg = color_basic, pch = dot_shape, 
+     xlab = "m", ylab = "Variance of Estimated beta1", main = "1-Step Generative Model")
+lines(beta_hat_means_1step$m, rep(var_beta_1(sigma, Xfull[1:n_fixed]), dim(beta_hat_means_1step)[1]), 
+      col = color_highlight, lwd = line_width)
+```
+
+
+### Distribution of the Estimated Values
+
+In the setting of the 1-Step Model, the estimated values for the hidden parameters $\beta_0^*$ and $\beta_1^*$ are known to be normally distributed with the means equal to $\beta_0^*$ and $\beta_1^*$ respectively and variances dependent on $X$ and standard deviation of noise. 
+
+As before, the sampling procedure is repeated $m$ times with the key difference being that $m$ remains fixed rather than an increasing sequence of values; the estimated values are collected in the process thereby resulting in $m$ values of $\hat{\beta_0}$ and $\hat{\beta_1}$ each (no averages are computed). Then we construct histograms of the estimated values and see how well they match the theoretical PDFs.
+
+```{r}
+m <- 10000
+hist_bins <- 50
+
+#computes a normal PDF with mean mu and standard deviation sg 
+#limited to the values in the vector x 
+normal_curve <- function(x, mu, sg) {
+  
+  xd <- seq(min(x), max(x), 0.01)
+  yd <- dnorm(xd, mean = mu, sd = sg)
+  cbind(xd, yd)
+}
+
+#collecting data for the 2-step model 
+beta_hats_2step_h <- sample_beta_estimator(m, n_fixed, beta_star[1], beta_star[2], env_2st)
+
+#collecting data for the 1-step model
+beta_hats_1step_h <- sample_beta_estimator(m, n_fixed, beta_star[1], beta_star[2], env_1st)
+#computing theoretical beta PDFs for the 1-step model
+beta0_pdf <- normal_curve(beta_hats_1step_h[,1], beta_star[1], 
+                              sqrt(var_beta_0(sigma, Xfull[1:n_fixed])))
+beta1_pdf <- normal_curve(beta_hats_1step_h[,2], beta_star[2], 
+                              sqrt(var_beta_1(sigma, Xfull[1:n_fixed])))
+
+par(mfcol = c(2, 2))
+
+#2-Step Model (no theoretical results concerning the underlying distribution in this work)
+hist(beta_hats_2step_h[,1], breaks = hist_bins, freq = FALSE, 
+     main = "2-Step Generative Model", xlab = "beta0", col = color_basic)
+
+hist(beta_hats_2step_h[,2], breaks = hist_bins, freq = FALSE, 
+     main = "2-Step Generative Model", xlab = "beta1", col = color_basic)
+
+#1-Step Model
+hist(beta_hats_1step_h[,1], breaks = hist_bins, freq = FALSE, 
+     main = "1-Step Generative Model", xlab = "beta0", col = color_basic)
+lines(beta0_pdf[,1], beta0_pdf[,2], lwd = line_width, col = color_highlight)
+
+hist(beta_hats_1step_h[,2], breaks = hist_bins, freq = FALSE, 
+     main = "1-Step Generative Model", xlab = "beta1", col = color_basic)
+lines(beta1_pdf[,1], beta1_pdf[,2], lwd = line_width, col = color_highlight)
+```
+
+
+### Distribution of the Estimator's Means (Data Collecation)
+
+Not only do we know how the estimated $\beta_i$ values are distributed, сentral limit theorem also gives us the information concerning distribution of mean values of the estimators (in the limit). Let us construct histograms for various values of $m$ in an effort to confirm that the distribution of $\sqrt{m} \cdot (\overline{\widehat{\mathcal{B}_i}} - \beta_i^*) / \sqrt{var[\widehat{\mathcal{B}_i}]}$, indeed, approaches standard normal. In order to achieve this, we must wrap our data collection procedure in another loop, this time over $k$.
+
+The demonstration will be limited to the 1-step generative model.
+
+```{r}
+k_max <- 2000
+m_seq <- c(1, 10, 1000)
+
+#Collects k samples of mean estimated values for the linear regression coefficients
+#along with respective sample variances.
+#Each estimated value is computed for a n-sized sample of X and Y; then an average
+#and sample variance are calculated over m such values.
+replicate_average_estimator <- function(m, n, k, varargs) {
+  
+  bh <- data.frame()
+  
+  for (i in 1:k) {
+    bh <- rbind(bh, c(moments_of_beta_estimator(m, n, beta_star[1], beta_star[2], varargs)))
+  }
+  
+  names(bh) <- c("mean_beta0", "mean_beta1", "var_beta0", "var_beta1")
+  bh
+}
+
+#running replicate_average_estimator for various values of m (given by the sequence m_seq)
+beta_hat_means_1step_cm <- lapply(m_seq, replicate_average_estimator, n_min, k_max, env_1st)
+#theoretical variances of estimated linear regression coefficients
+beta_vars_cm <- c(var_beta_0(sigma, Xfull[1:n_min]), var_beta_1(sigma, Xfull[1:n_min]))
+```
+
+
+### Distribution of the Estimator's Means (Plotting)
+
+Here we plot the PDFs interpolated from histograms for the data collected at the previous step along with a PDF of the standard normal distribution for various values of m. What we are hoping to see is the reconstructed PDF gradually shaping into that of $\mathcal{N}(0, 1)$.
+
+```{r fig.width = 8, fig.height=3.5}
+par(mfcol = c(2, length(beta_hat_means_1step_cm)))
+
+show_density <- function(m, bhms, beta_vars, beta_idx) {
+  
+  #either mean_beta0 or mean_beta1 (depending on the value of beta_idx)
+  b = bhms[, beta_idx + 1]
+  
+  #theoretical variance of beta0 or beta1 (depending on the value of beta_idx)
+  bvar = beta_vars[beta_idx + 1]
+  
+  #computing an r.v. that should converge to N(0, 1) in distribution
+  clt = sqrt(m) * (b - rep(beta_star[beta_idx + 1], length(b))) / sqrt(bvar)
+  dclt = density(clt)
+  
+  #pdf of standard normal distribution 
+  curve(dnorm(x, mean = 0, sd = 1), from =-4, to = 4, col = color_highlight, ylim = c(0, max(0.4, max(dclt$y))),
+        ylab = "density", xlab = paste("mean beta", beta_idx), main = paste("m = ", m), lwd = line_width)
+  
+  #interpolate clt's pdf from its histogram
+  lines(dclt, col = color_basic, lw = line_width, lty = 2)
+}
+
+for (idx in 1:length(beta_hat_means_1step_cm)) {
+  show_density(m_seq[idx], beta_hat_means_1step_cm[[idx]], beta_vars_cm, 0)
+  show_density(m_seq[idx], beta_hat_means_1step_cm[[idx]], beta_vars_cm, 1)
+}
+```
+
+The plots do not seem to change drastically with an increase in sample size and the effect of convergence in distribution is not clearly visible. It should not be. When the noise is Gaussian, the estimated values themselves are already normally distributed and so are their averages, even for very small m. Let us try another distribution for the noise.
+
+
+### Distribution of the Estimator's Means (Beta-Distributed Noise)
+
+Which of the known distributions can we choose? The possibilities are numerous while restrictions are not: the distribution of choice must have finite variance and zero mean. Why not Beta distribution shifted to the left by the value of its mean? 
+
+```{r}
+alpha <- 1.1
+beta <- 9
+
+#samples n values from beta distribution
+beta_noise <- function(n, varargs) {
+  stopifnot(env_has(varargs, "alpha"))
+  stopifnot(env_has(varargs, "beta"))
+  rbeta(n, varargs$alpha, varargs$beta) - varargs$alpha / (varargs$alpha + varargs$beta)
+}
+
+env_1st_bn <- env(gen_noise = beta_noise, alpha = alpha, beta = beta, gen_feature = deterministic_feature, XSource = Xfull)
+
+beta_hat_means_1step_bncm <- lapply(m_seq, replicate_average_estimator, n_min, k_max, env_1st_bn)
+#standard deviation of Beta distribution
+bn_sd <- sqrt((alpha * beta)/(alpha + beta + 1.0)) * (1.0/(alpha + beta))
+beta_vars_bncm <- c(var_beta_0(bn_sd, Xfull[1:n_min]), var_beta_1(bn_sd, Xfull[1:n_min]))
+```
+
+An interesting feature of Beta distribution with these particular parameters is its asymmetry relative to the mean (one of the reasons why I picked it). 
+
+```{r}
+curve(dbeta(x, alpha, beta), col = color_basic, ylab = "beta PDF",lwd = line_width)
+beta_mean <- alpha / (alpha + beta)
+mean_ln <- seq(0, dbeta(beta_mean, alpha, beta), 0.1)
+lines(rep(beta_mean, length(mean_ln)), mean_ln, col = color_highlight, lwd = line_width)
+```
+
+A cursory glance at the formula for computing the $\hat{\beta_1}$ estimator leads us to the conclusion that the estimated values may still be roughly normally distributed (even if the noise is not Gaussian) if $n$ is large enough, therefore n_min is used in place of n_fixed.
+
+Let us now repeat the experiment with the new distribution for the noise.
+
+```{r fig.width = 8, fig.height=3.5}
+par(mfcol = c(2, length(beta_hat_means_1step_bncm)))
+
+for (idx in 1:length(beta_hat_means_1step_cm)) {
+  show_density(m_seq[idx], beta_hat_means_1step_bncm[[idx]], beta_vars_bncm, 0)
+  show_density(m_seq[idx], beta_hat_means_1step_bncm[[idx]], beta_vars_bncm, 1)
+}
+```
