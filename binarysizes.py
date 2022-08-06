@@ -7,8 +7,6 @@
     Ry Auscitte
 """
 
-#Why would anyone even concern themselves with such trivialities? Find out here. 
-
 import os
 import sys
 import struct
