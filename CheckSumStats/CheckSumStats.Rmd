@@ -265,7 +265,7 @@ plot_pdf_collisions_combined(gdf, egdf,
                              color_good, color_good_highlight)
 ```
 
-Looking at the collision counts plot, one would expect a bimodal PDF; however, the density plot assumes a different shape on account of the second peak being averaged out by lower values "from the same bin".
+Looking at the collision counts plot, one would expect a bimodal PDF; however, the density plot assumes a different shape on account of the second peak being outweighed by lower values "from the same bin". The relatively narrow peak we predicted earlier is clearly visible, while the long thin tail is less so on account of its length having been concealed by logarithmic scale. Such a PDF shape implies that the probabiity of a random checksum value falling in the tight region around 100000 is significantly higher as compared to other regions in the range.
 
 
 ## Invalid Checksums
@@ -288,7 +288,7 @@ plot_pdf_collisions_combined(bdf[bdf$CheckSum > 0, ], ebdf,
                              color_bad, color_bad_highlight)
 ```
 
-At first glance, collision counts plot looks very similar to that for valid checksums, but the histogram and KDE show a different picture. Keep in mind, however, that there are significantly fewer binaries with incorrect non-zero checksum in the dataset, which makes one wonder if the sample in question can be deemed representative and what the plot would look like were we to obtain more data.  
+At first glance, collision counts plot looks very similar to that for valid checksums, but the histogram and KDE show a different picture. The estimated PDF is much flatter giving a decent probability of occuring to a wider range of values. Keep in mind, however, that there are significantly fewer binaries with incorrect non-zero checksum in the dataset, which makes one wonder if the sample in question can be deemed representative and what the plot would look like were we to obtain more data.  
 
 ```{r results='hold'}
 cat(paste("Number of binaries with non-zero invalid checksum:", paste0(dim(ebdf)[1], ".\n")))
