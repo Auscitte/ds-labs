@@ -1,4 +1,4 @@
-""" Collects stats about sizes of PE binaries.   
+""" Collects stats about sizes of PE binaries.
 
 :Copyright:
     Copyright Ry Auscitte 2022. This script is distributed under MIT License.
